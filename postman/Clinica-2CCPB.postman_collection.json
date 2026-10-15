@@ -1,0 +1,487 @@
+{
+  "info": {
+    "_postman_id": "d3bcb5bd-8046-4db7-9ce0-15102026cc01",
+    "name": "Clinica 2CCPB",
+    "description": "Fluxo da aula de 15/10/2026: Postman como cliente, SQLite versionado, consultas e respostas de erro. Execute na ordem; não usa Authorization nem JWT.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const formatDate = (date) => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');",
+          "const today = new Date();",
+          "const future = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 19);",
+          "const outsideWindow = new Date(today.getFullYear(), today.getMonth() + 3, today.getDate());",
+          "pm.collectionVariables.set('dataHoje', formatDate(today));",
+          "pm.collectionVariables.set('dataFutura', formatDate(future));",
+          "pm.collectionVariables.set('dataForaJanela', formatDate(outsideWindow));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Processo",
+      "item": [
+        {
+          "name": "GET /clinica",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clinica",
+            "description": "Confirma que a API está no ar na porta 3000."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 e serviço no ar\", () => { pm.response.to.have.status(200); pm.expect(pm.response.json().ok).to.eql(true); pm.expect(pm.response.json().servico).to.eql('clinica-api'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Catalogo",
+      "item": [
+        {
+          "name": "GET /especialidades",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/especialidades"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 e dez especialidades\", () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.have.length(10); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /medicos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/medicos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200, dez médicos e especialidade aninhada\", () => { const body = pm.response.json(); pm.response.to.have.status(200); pm.expect(body).to.have.length(10); pm.expect(body[0].especialidade.nome).to.eql('Cardiologia'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /usuarios (sem senha)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/usuarios"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200, doze contas e nenhuma senha\", () => { const body = pm.response.json(); pm.response.to.have.status(200); pm.expect(body).to.have.length(12); pm.expect(body.every((usuario) => !('senha' in usuario))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Consultas",
+      "item": [
+        {
+          "name": "GET /consultas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/consultas",
+            "description": "Uma lista vazia também retorna 200 e []."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 e uma lista JSON\", () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /consultas/999",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/consultas/999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 para consulta inexistente\", () => { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /consultas/abc",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/consultas/abc"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 para id inválido\", () => { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /consultas (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicoId\": 1,\n  \"pacienteId\": 1,\n  \"data\": \"{{dataFutura}}\",\n  \"observacoes\": \"Retorno via API\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/consultas",
+            "description": "Cria uma consulta para Ana e Maria. Na data da aula (15/10/2026), dataFutura resulta em 2026-11-03."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 POST /consultas (201)\", () => { pm.response.to.have.status(201); const body = pm.response.json(); pm.expect(body.medico.nome).to.eql('Dra. Ana Souza'); pm.expect(body.paciente.nome).to.eql('Maria Silva'); pm.expect(body.data).to.eql(pm.collectionVariables.get('dataFutura')); pm.expect(body.valor).to.eql(350); pm.expect(body.status).to.eql('agendada'); pm.collectionVariables.set('consultaId', body.id); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /consultas (após o POST)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/consultas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 e a consulta criada aparece na lista\", () => { const body = pm.response.json(); pm.response.to.have.status(200); pm.expect(body.some((consulta) => consulta.id === Number(pm.collectionVariables.get('consultaId')))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /consultas/{{consultaId}}",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/consultas/{{consultaId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 para a consulta do POST\", () => { pm.response.to.have.status(200); pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('consultaId'))); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 Erros do POST",
+      "item": [
+        {
+          "name": "POST /consultas data de hoje (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicoId\": 1,\n  \"pacienteId\": 1,\n  \"data\": \"{{dataHoje}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/consultas",
+            "description": "Recusa hoje e datas passadas."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 POST /consultas data de hoje (400)\", () => { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /consultas além de dois meses (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicoId\": 1,\n  \"pacienteId\": 1,\n  \"data\": \"{{dataForaJanela}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/consultas",
+            "description": "Recusa datas depois da janela de dois meses."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 POST /consultas além de dois meses (400)\", () => { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /consultas data inválida (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicoId\": 1,\n  \"pacienteId\": 1,\n  \"data\": \"03/11/2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/consultas",
+            "description": "A data deve usar o formato YYYY-MM-DD."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 POST /consultas data inválida (400)\", () => { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /consultas sem body (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "none"
+            },
+            "url": "{{baseUrl}}/consultas",
+            "description": "Request sem corpo JSON."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 POST /consultas sem body (400)\", () => { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /consultas médico inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicoId\": 999,\n  \"pacienteId\": 1,\n  \"data\": \"{{dataFutura}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/consultas",
+            "description": "O médico 999 não existe."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 POST /consultas médico inexistente (404)\", () => { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /consultas usuário não paciente (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicoId\": 1,\n  \"pacienteId\": 2,\n  \"data\": \"{{dataFutura}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/consultas",
+            "description": "O usuário 2 existe, mas tem papel medico."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 POST /consultas usuário não paciente (404)\", () => { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 Rota inexistente",
+      "item": [
+        {
+          "name": "GET /login",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/login",
+            "description": "Login com JWT será adicionado na próxima aula."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 para rota inexistente\", () => { pm.response.to.have.status(404); pm.expect(pm.response.json().erro).to.eql('Rota não encontrada.'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "consultaId",
+      "value": "1"
+    },
+    {
+      "key": "dataHoje",
+      "value": ""
+    },
+    {
+      "key": "dataFutura",
+      "value": ""
+    },
+    {
+      "key": "dataForaJanela",
+      "value": ""
+    }
+  ]
+}

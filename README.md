@@ -1,6 +1,6 @@
 # Marcação de Consultas - Backend
 
-API didática da clínica para a aula de 08/10/2026. Usa Node.js, TypeScript, Express e o SQLite nativo do Node. O app Expo permanece no repositório separado e não é alterado nesta etapa.
+API didática da clínica para as aulas de 08/10 e 15/10/2026. Usa Node.js, TypeScript, Express e o SQLite nativo do Node. O app Expo permanece no repositório separado e não é alterado nesta etapa.
 
 ## Requisitos
 
@@ -20,7 +20,7 @@ A API inicia em `http://localhost:3000`. Para reiniciar automaticamente ao edita
 npm run dev
 ```
 
-O banco `src/dados/clinica.db` é criado no primeiro início. O catálogo em `src/dados/catalogo.json` é semeado quando a tabela `especialidades` está vazia. O banco e os arquivos auxiliares do SQLite são ignorados pelo Git.
+O banco versionado `src/dados/clinica.db` contém o catálogo e a consulta de exemplo da aula de 15/10/2026. Se o arquivo não existir, o primeiro início cria o banco e semeia o catálogo de `src/dados/catalogo.json` quando a tabela `especialidades` está vazia. O banco é versionado; os arquivos auxiliares `*.db-wal` e `*.db-shm` continuam ignorados.
 
 ## Rotas
 
@@ -31,7 +31,7 @@ O banco `src/dados/clinica.db` é criado no primeiro início. O catálogo em `sr
 | GET | `/medicos` | Médicos com objeto `especialidade` |
 | GET | `/usuarios` | Usuários sem o campo `senha` |
 | GET | `/consultas` | Lista de consultas; lista vazia retorna `200` e `[]` |
-| GET | `/consultas/:id` | Consulta pelo id ou `404` |
+| GET | `/consultas/:id` | Consulta pelo id, `400` para id inválido ou `404` para id inexistente |
 | POST | `/consultas` | Cria consulta e retorna `201` |
 
 O POST recebe JSON com ids numéricos positivos e data civil no formato `YYYY-MM-DD`:
@@ -57,4 +57,4 @@ npm run typecheck
 
 Depois, teste os GETs e o POST em `http://localhost:3000` pelo Postman. Não é necessário enviar Authorization nesta aula.
 
-Para agilizar a conferência, importe `postman/clinica-api.postman_collection.json` no Postman. A coleção calcula as datas de teste no momento de cada envio; execute os requests na ordem apresentada. O primeiro GET `/consultas` retorna `[]` em um banco recém-criado; depois do POST válido, passa a listar a consulta criada.
+Para agilizar a conferência, importe `postman/Clinica-2CCPB.postman_collection.json` no Postman. A collection está organizada nas cinco pastas da aula e calcula as datas de teste no momento de cada envio; execute os requests na ordem apresentada. O banco versionado já contém a consulta de exemplo com data `2026-11-03`; em um banco vazio, GET `/consultas` retorna `200` com `[]`. Depois do POST válido, a lista inclui também a consulta criada, e a collection guarda o id retornado para o GET seguinte.

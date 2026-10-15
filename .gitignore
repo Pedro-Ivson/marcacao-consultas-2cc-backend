@@ -4,5 +4,6 @@ dist/
 .env.*
 !.env.example
 *.db
+!src/dados/clinica.db
 *.db-wal
 *.db-shm
